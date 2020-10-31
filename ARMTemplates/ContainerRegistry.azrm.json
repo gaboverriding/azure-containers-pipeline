@@ -1,0 +1,60 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "variables": {
+        "registryName": "[concat('mycontainerregistry',variables('deploymentId'))]",
+        "location": "[resourceGroup().location]",
+        "deploymentId": "[uniqueString(resourceGroup().id)]",
+        "regApiVersion": "2019-12-01-preview"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerRegistry/registries",
+            "apiVersion": "[variables('regApiVersion')]",
+            "name": "[variables('registryName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard"
+            },
+            "properties": {
+                "adminUserEnabled": true,
+                "policies": {
+                    "quarantinePolicy": {
+                        "status": "disabled"
+                    },
+                    "trustPolicy": {
+                        "type": "Notary",
+                        "status": "disabled"
+                    },
+                    "retentionPolicy": {
+                        "days": 7,
+                        "status": "disabled"
+                    }
+                },
+                "encryption": {
+                    "status": "disabled"
+                },
+                "dataEndpointEnabled": false
+            }
+        }
+    ],
+    "outputs": {
+        "registry_name": {
+            "value": "[variables('registryName')]",
+            "type": "string"
+        },
+        "registry_server": {
+            "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries',variables('registryName')),variables('regApiVersion')).loginServer]",
+            "type": "string"
+        },
+        "registry_username": {
+            "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries',variables('registryName')),variables('regApiVersion')).username]",
+            "type": "string"
+        },
+        "registry_password": {
+            "value": "[listCredentials(resourceId('Microsoft.ContainerRegistry/registries',variables('registryName')),variables('regApiVersion')).passwords[0].value]",
+            "type": "string"
+        }
+    }
+}
