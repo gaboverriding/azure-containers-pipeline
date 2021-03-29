@@ -80,7 +80,7 @@
             }
           ],
           "type": "Public",
-          "dnsNameLabel": "mynodeapp"
+          "dnsNameLabel": "myapirest"
         },
         "osType": "Linux"
       }

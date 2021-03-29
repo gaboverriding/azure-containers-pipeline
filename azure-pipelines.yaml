@@ -1,0 +1,104 @@
+trigger:
+  branches:
+    include: 
+    - master
+variables:
+  buildConfiguration: 'Release'
+  location: 'southcentralus'
+  acrHostName: 'miazurecontainerregistry.azurecr.io'
+  acrName: 'miazurecontainerregistry'
+  rgName: 'pocpipeline_ResourceGroup'
+  imageName: 'api-rest-incidencias'
+  webAppName: 'api-rest-incidencias'
+  azureSubscription: 'Free Trial (ef433f0c-80ed-447e-ae0c-0f38b7e6125d)'
+  idSubscription: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
+  tag: '$(Build.BuildId)'
+  azureResourceManagerConection: 'AzureResourceManager_ServiceConnection'
+
+stages:
+
+# Build Stage
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'Ubuntu-16.04'
+    steps:
+
+    # Crear o actualizar Azure Container Registry ACR
+    - task: AzureResourceGroupDeployment@2
+      displayName: 'Crear Azure Container Registry'
+      inputs:
+        azureSubscription: '$(azureResourceManagerConection)'
+        resourceGroupName: '$(rgName)'
+        location: '$(location)'
+        csmFile: '$(Build.SourcesDirectory)/ARMWebAppTemplates/containerRegistry-template.json'
+        overrideParameters: '-registryName "$(acrName)" -registryLocation "$(location)" -registrySku standard'
+
+    # Construir imagen de API en Azure
+    - task: Docker@2
+      displayName: Construir imagen de API
+      inputs:
+        command: build
+        dockerfile: '$(Build.SourcesDirectory)/SourceCode/Dockerfile'
+        repository: "$(imageName)"
+        tags: $(tag)
+
+    # Subir imagen de API en Azure
+    - task: Docker@2
+      displayName: Subir imagen de API
+      inputs:
+        command: push
+        containerRegistry: "$(acrName)"
+        repository: "$(acrName)/$(imageName)"
+        tags: $(tag)
+
+    # Copy ARM templates
+    - task: CopyFiles@2
+      displayName: 'Copy ARM templates'
+      inputs:
+        SourceFolder: ARMWebAppTemplates
+        TargetFolder: '$(build.artifactstagingdirectory)'
+
+    # Publish the app as an artifact
+    - publish: $(Build.StagingDirectory)
+      artifact: app
+
+# Staging release
+- stage: Staging
+  jobs:
+  - job: Release
+    pool:
+      vmImage: 'Ubuntu-16.04'
+    steps:
+    # Don't clone the repo
+    - checkout: none
+
+    # Download the published application artifact
+    - download: current
+      artifact: app
+
+    # Create or update Azure App Service
+    - task: AzureResourceGroupDeployment@2
+      displayName: 'Azure Deployment:Create Azure App Service'
+      inputs:
+        azureSubscription: '$(azureResourceManagerConection)'
+        resourceGroupName: '$(rgName)'
+        location: '$(location)'
+        csmFile: '$(Pipeline.Workspace)/**/container-webapp-template.json'
+        overrideParameters: '-webAppName $(webAppName) -hostingPlanName $(webAppName) -appInsightsLocation "$(location)" -sku "S1 Standard" -registryName $(acrName) -registryLocation "$(location)" -registrySku standard -imageName $(imageName):$(Build.BuildId)'
+
+    # Deploy App Service
+    - task: AzureRmWebAppDeployment@3
+      displayName: 'Deploy Azure App Service'
+      inputs:
+        azureSubscription: '$(azureResourceManagerConection)'
+        appType: applinux
+        WebAppName: $(webAppName)
+        DockerNamespace: $(acrHostName)
+        DockerRepository: $(webAppName)
+        DockerImageTag: '$(Build.BuildId)'
+        WebAppUri: webAppUrl
+        TakeAppOfflineFlag: true
+        UseWebDeploy: true
+        RenameFilesFlag: true

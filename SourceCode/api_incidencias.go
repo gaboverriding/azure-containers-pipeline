@@ -31,7 +31,7 @@ func main() {
 	gorilla_router.HandleFunc("/api/incidencias/{id}", DeleteNoteHandler).Methods("DELETE")
 
 	server := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":80",
 		Handler:        gorilla_router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,

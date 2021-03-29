@@ -1,0 +1,68 @@
+# Pipeline para POC Azure tribu Public Cloud
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+  tag: '$(Build.BuildId)'
+  azSubscription: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
+  buildConfiguration: 'Release'
+  location: 'southcentralus'
+  acrHostName: 'pocpipelineregistry.azurecr.io'
+  acrName: 'pocpipelineregistry'
+  rgName: 'pocPipelineRG'
+  imageName: 'api-rest-incidencias'
+  webAppName: 'api-rest-incidencias'
+
+stages:
+- stage: Build
+  displayName: Construcción de Imagen en Azure
+  jobs:  
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+
+    # Construir imagen de API en infraestructura de Azure
+    - task: Docker@2
+      displayName: Construye imagen de API en Azure
+      inputs:
+        command: build
+        dockerfile: '$(Build.SourcesDirectory)/SourceCode/Dockerfile'        
+        repository: gaboverriding/api-rest-incidencias
+        tags: $(tag)
+
+    # Disponibilizar imagen en Docker Hub
+    - task: Docker@2
+      displayName: Disponibilizar imagen de API en Docker Hub
+      inputs:
+        containerRegistry: gaboDockerHub
+        repository: gaboverriding/api-rest-incidencias
+        command: push
+        tags: $(tag)
+
+    # Copiar ARM template
+    - task: CopyFiles@2
+      displayName: 'Copiar ARM templates'
+      inputs:
+        SourceFolder: ARMWebAppTemplates
+        TargetFolder: '$(build.artifactstagingdirectory)/ARMWebAppTemplates'
+
+    # Publicar artefactos
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publicar Artefactos'
+
+    # Crear WebApp Container para la API
+    - task: AzureResourceManagerTemplateDeployment@3
+      displayName: 'ARM Template deployment: Azure WebApp for Container para API Rest de Incidencias'
+      inputs:
+        azureResourceManagerConnection: 'Free Trial (ef433f0c-80ed-447e-ae0c-0f38b7e6125d)'
+        subscriptionId: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
+        resourceGroupName: '$(rgName)'
+        location: '$(location)'
+        csmFile: '$(build.artifactstagingdirectory)/ARMWebAppTemplates/webapp_template.json'
+        csmParametersFile: '$(build.artifactstagingdirectory)/ARMWebAppTemplates/webapp_parameters.json'
