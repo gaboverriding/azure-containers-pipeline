@@ -31,7 +31,7 @@ func main() {
 	gorilla_router.HandleFunc("/api/incidencias/{id}", DeleteNoteHandler).Methods("DELETE")
 
 	server := &http.Server{
-		Addr:           ":80",
+		Addr:           ":8080",
 		Handler:        gorilla_router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
@@ -120,6 +120,8 @@ func PutNoteHandler(w http.ResponseWriter, r *http.Request) {
 	if incidencia, ok := datosIncidencias[k]; ok {
 		// SE RECUPERA EL TIMESTAMP DE LA NOTA A ACTUALIZAR
 		incidenciaUpdate.CreadaElDia = incidencia.CreadaElDia
+		// SE RECUPERA EL ID
+		incidenciaUpdate.IdIncidencia = incidencia.IdIncidencia
 		// SE BORRA LA NOTA ANTERIOR
 		delete(datosIncidencias, k)
 		// SE ACTUALIZA EL REGISTRO CON LOS DATOS NUEVOS
