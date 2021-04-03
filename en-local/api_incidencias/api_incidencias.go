@@ -2,19 +2,20 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 // API REST - ENTIDAD Incidencia
 type Incidencia struct {
-	IdIncidencia      string    `json:"id_incidencia"`
-	Titulo      string    `json:"titulo"` // ANOTACION DE CAMPOS DE ESTRUCTURAS
-	Descripcion string    `json:"descripcion"`
-	CreadaElDia time.Time `json:"creada_el_dia"`
+	IdIncidencia string    `json:"id_incidencia"`
+	Titulo       string    `json:"titulo"` // ANOTACION DE CAMPOS DE ESTRUCTURAS
+	Descripcion  string    `json:"descripcion"`
+	CreadaElDia  time.Time `json:"creada_el_dia"`
 }
 
 var datosIncidencias = make(map[string]Incidencia)
@@ -45,7 +46,7 @@ func main() {
 
 // GetNoteHandler - GET - /api/incidencias
 func GetNoteHandler(w http.ResponseWriter, r *http.Request) {
-        log.Println("Se invocó GET ...")
+	log.Println("Se invocó GET ...")
 	// SLICE DE Incidencias
 	var incidencias []Incidencia
 	for _, valor := range datosIncidencias {
@@ -70,8 +71,8 @@ func GetNoteHandler(w http.ResponseWriter, r *http.Request) {
 // PostNoteHandler - POST - /api/incidencias
 // { "title" : "Titulo que sea", "description" : "alguna descripcion"}
 func PostNoteHandler(w http.ResponseWriter, r *http.Request) {
-        log.Println("Se invocó POST ...")
-	// SLICE DE Incidencias
+	log.Println("Se invocó POST ...")
+	// Incidencia nueva
 	var incidencia Incidencia
 	// DECODIFICADOR PARA EL DATO DE ENTRADA Y VERIFICAR QUE EL JSON ENVIADO ES CORRECTO
 	err := json.NewDecoder(r.Body).Decode(&incidencia)
@@ -83,13 +84,14 @@ func PostNoteHandler(w http.ResponseWriter, r *http.Request) {
 	id++
 	k := strconv.Itoa(id)
 	incidencia.IdIncidencia = k
+	// SE AGREGA LA NUEVA INCIDENCIA AL ARREGLO DE INCIDENCIAS
 	datosIncidencias[k] = incidencia
 
 	// SE PREPARA LA RESPUESTA AL CLIENTE
-	// Set ESTABLECE CABECERAS HTTP
+	// SE ESTABLECE POR CABECERA EL TIPO DE RESPUESTA
 	w.Header().Set("Content-Type", "application/json")
 
-	// PASAR LOS DATOS AL FORMATO JSON CON Marshall
+	// SE PASAN LOS DATOS AL FORMATO JSON CON Marshall
 	j, err := json.Marshal(incidencia)
 	if err != nil {
 		panic(err)
@@ -103,31 +105,33 @@ func PostNoteHandler(w http.ResponseWriter, r *http.Request) {
 
 // PutNoteHandler - PUT - /api/incidencias/id
 func PutNoteHandler(w http.ResponseWriter, r *http.Request) {
-        log.Println("Se invocó PUT ...")
-	// SE RECUPERAN LOS PARAMETROS, EN ESTE CASO EL id
-	// DEVUELVE EN UN MAP DE STRING CUYO INDICE ES EL NOMBRE DE LA VARIABLE
+	log.Println("Se invocó PUT ...")
+	// SE RECUPERA EL PARAMETRO INDICADO, EN ESTE CASO "id"
+	// DEVUELVE EN UN MAP DE STRING CUYO INDICE ES EL NOMBRE DEL PARAMETRO "id"
 	vars := mux.Vars(r)
+
+	// SE RECUPERA EL "id" INFORMADO
 	k := vars["id"]
 
-	// SE OBTIENEN LOS DATOS QUE SE VAN A ACTUALIZAR
+	// SE OBTIENEN LOS DATOS INFORMADOS EN EL PAYLOAD Y SE ASIGNAN A UNA ESTRUCTURA
 	var incidenciaUpdate Incidencia
 	err := json.NewDecoder(r.Body).Decode(&incidenciaUpdate)
 	if err != nil {
 		panic(err)
 	}
 
-	// SE REVISA SI EXISTE LA NOTA
+	// SE REVISA SI EXISTE LA INCIDENCIA POR EL ID
 	if incidencia, ok := datosIncidencias[k]; ok {
-		// SE RECUPERA EL TIMESTAMP DE LA NOTA A ACTUALIZAR
+		// SE RECUPERA EL TIMESTAMP DE LA INCIDENCIA A ACTUALIZAR
 		incidenciaUpdate.CreadaElDia = incidencia.CreadaElDia
-		// SE RECUPERA EL ID
+		// SE RECUPERA EL ID DE LA INCIDENCIA A ACTUALIZAR
 		incidenciaUpdate.IdIncidencia = incidencia.IdIncidencia
-		// SE BORRA LA NOTA ANTERIOR
+		// SE BORRA LA INCIDENCIA ACTUAL
 		delete(datosIncidencias, k)
-		// SE ACTUALIZA EL REGISTRO CON LOS DATOS NUEVOS
+		// SE AGREGA UN NUEVO REGISTRO CON LOS DATOS NUEVOS
 		datosIncidencias[k] = incidenciaUpdate
 	} else {
-		log.Printf("No se encontro la incidencia con el id es: %d", k)
+		log.Printf("No se encontro la incidencia con el id: %d", k)
 	}
 
 	// SE MANDA LA RESPUESTA AL CLIENTE
@@ -137,17 +141,17 @@ func PutNoteHandler(w http.ResponseWriter, r *http.Request) {
 
 // DeleteNoteHandler - DELETE - /api/incidencias/id
 func DeleteNoteHandler(w http.ResponseWriter, r *http.Request) {
-        log.Println("Se invocó DELETE ...")
-	// SE RECUPERAN LOS PARAMETROS, EN ESTE CASO EL id
-	// DEVUELVE EN UN MAP DE STRING CUYO INDICE ES EL NOMBRE DE LA VARIABLE
+	log.Println("Se invocó DELETE ...")
+	// SE RECUPERAN LOS PARAMETROS, EN ESTE CASO EL "id"
+	// DEVUELVE EN UN MAP DE STRING CUYO INDICE ES EL NOMBRE DEL PARAMETRO "id"
 	vars := mux.Vars(r)
 	k := vars["id"]
 
-	// SE REVISA SI EXISTE LA NOTA
+	// SE REVISA SI EXISTE LA INCIDENCIA
 	if _, ok := datosIncidencias[k]; ok {
 		delete(datosIncidencias, k)
 	} else {
-		log.Printf("No se encontro la incidencia con el id es: %d", k)
+		log.Printf("No se encontro la incidencia con el id: %d", k)
 	}
 
 	// SE MANDA LA RESPUESTA AL CLIENTE
