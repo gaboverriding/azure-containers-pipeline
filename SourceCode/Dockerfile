@@ -1,15 +1,13 @@
 # Generar imagen de API Rest para incidencias en dos pasos
-FROM golang:latest AS builder
-
-# Disponibilizar dependencias
-RUN go get github.com/gorilla/mux
+FROM golang:alpine3.13 AS builder
 
 # Compilar API y generar ejecutable
 WORKDIR /app
-COPY ./*.go ./
+COPY ./* ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -a -o ./api_rest_incidencias .
 
 FROM alpine:latest
+#FROM scratch
 RUN apk --no-cache add ca-certificates
 
 # Copiar artefacto generado por el builder en el paso anterior

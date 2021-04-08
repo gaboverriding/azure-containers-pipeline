@@ -1,4 +1,4 @@
-package main
+package apirestincidencias
 
 import (
 	"encoding/json"
