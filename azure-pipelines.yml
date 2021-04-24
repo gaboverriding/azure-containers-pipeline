@@ -8,14 +8,14 @@ resources:
 
 variables:
   tag: '$(Build.BuildId)'
-  azSubscription: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
-  buildConfiguration: 'Release'
   location: 'southcentralus'
-  acrHostName: 'pocpipelineregistry.azurecr.io'
-  acrName: 'pocpipelineregistry'
   rgName: 'pocPipelineRG'
-  imageName: 'api-rest-incidencias'
-  webAppName: 'api-rest-incidencias'
+  # Estas variables se tienen que personalizar de acuerdo a la cuenta de Azure y Docker Hub
+  azSubscription: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
+  usuarioDockerHub: 'gaboverriding'
+  repoDockerHub: 'api-rest-incidencias'
+  conexionDockerHub: 'gaboDockerHub'
+  azureResourceManagerConnection: 'pocPipelineRG'
 
 stages:
 - stage: Build
@@ -33,15 +33,15 @@ stages:
       inputs:
         command: build
         dockerfile: '$(Build.SourcesDirectory)/SourceCode/Dockerfile'        
-        repository: gaboverriding/api-rest-incidencias
+        repository: '$(usuarioDockerHub)/$(repoDockerHub)'
         tags: $(tag)
 
     # Disponibilizar imagen en Docker Hub
     - task: Docker@2
       displayName: Disponibilizar imagen de API en Docker Hub
       inputs:
-        containerRegistry: gaboDockerHub
-        repository: gaboverriding/api-rest-incidencias
+        containerRegistry: '$(conexionDockerHub)'
+        repository: '$(usuarioDockerHub)/$(repoDockerHub)'
         command: push
         tags: $(tag)
 
@@ -60,8 +60,8 @@ stages:
     - task: AzureResourceManagerTemplateDeployment@3
       displayName: 'ARM Template deployment: Azure WebApp for Container para API Rest de Incidencias'
       inputs:
-        azureResourceManagerConnection: 'Free Trial (ef433f0c-80ed-447e-ae0c-0f38b7e6125d)'
-        subscriptionId: 'ef433f0c-80ed-447e-ae0c-0f38b7e6125d'
+        azureResourceManagerConnection: '$(azureResourceManagerConnection)'
+        subscriptionId: '$(azSubscription)'
         resourceGroupName: '$(rgName)'
         location: '$(location)'
         csmFile: '$(build.artifactstagingdirectory)/ARMWebAppTemplates/webapp_template.json'
