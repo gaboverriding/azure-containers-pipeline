@@ -32,15 +32,15 @@ func main() {
 	gorilla_router.HandleFunc("/api/incidencias/{id}", DeleteNoteHandler).Methods("DELETE")
 
 	server := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":80",
 		Handler:        gorilla_router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	log.Println("Go API Rest para la bitácora de incidencias escuchando en puerto  8080 ...")
-	server.ListenAndServe()
+	log.Println("Go API Rest para la bitácora de incidencias escuchando en puerto  80 ...")
+	log.Fatal(server.ListenAndServe())
 
 }
 
