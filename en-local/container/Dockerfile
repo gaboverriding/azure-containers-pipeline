@@ -6,7 +6,7 @@ RUN go get github.com/gorilla/mux
 
 # Compilar API y generar ejecutable
 WORKDIR /app
-COPY ./*.go ./
+COPY ./* ./
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -a -o ./api_rest_incidencias .
 
 FROM alpine:latest
