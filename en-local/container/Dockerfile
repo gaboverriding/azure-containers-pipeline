@@ -1,8 +1,5 @@
 # Generar imagen de API Rest para incidencias en dos pasos
-FROM golang:latest AS builder
-
-# Disponibilizar dependencias
-RUN go get github.com/gorilla/mux
+FROM golang:alpine3.13 AS builder
 
 # Compilar API y generar ejecutable
 WORKDIR /app
